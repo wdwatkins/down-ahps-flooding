@@ -120,18 +120,21 @@ sites.df$NWS <- ifelse(sites.df$NWS, "AHPS site (343)",
                        "Non-AHPS site (499)")
 sites.df$priority <- ifelse(sites.df$priority, "Federal Priority",
                             "Other")
-sites.df <- filter(sites.df, NWS == "AHPS site (343)") %>% filter(!is.na(max_stage_exceeded)) %>% 
+#filter(sites.df, NWS == "AHPS site (343)") #some sites were incorrectly removed here
+#not sure why they were not considered AHPS
+#does result in two duplicates though
+sites.df <-  sites.df %>% filter(!is.na(max_stage_exceeded) & max_stage_exceeded != "no forecast") %>% 
   mutate(max_stage_exceeded = ifelse(max_stage_exceeded %in% c("none", "low"), 
-                                     yes = "none/low", no = max_stage_exceeded))
+                                     yes = "none/low", no = max_stage_exceeded)) %>% distinct()
 
 ################################
 # Get NWM Max Flows
 ################################
 
-sbtools::authenticate_sb()
-
-sbtools::item_file_download("5bcf61cde4b0b3fc5cde1742", names = "max_flows.rds", 
-                            destinations = "max_flows.rds", overwrite_file = TRUE)
+# sbtools::authenticate_sb()
+# 
+# sbtools::item_file_download("5bcf61cde4b0b3fc5cde1742", names = "max_flows.rds", 
+#                             destinations = "max_flows.rds", overwrite_file = TRUE)
 
 site_nwm_max_flows <- readRDS("max_flows.rds")
 
@@ -168,13 +171,14 @@ gsMap <- ggplot() +
                  color = max_stage_exceeded))  + 
   scale_color_manual(values = c(`no forecast` = "grey", `none/low` = "green", action = "blue", 
                                 bankfull = "yellow", flood = "darkorange", major = "red"))  +
+  scale_shape_manual(values=c(`Federal Priority` = 17, Other = 16)) +
   theme_minimal() +
   theme(panel.grid = element_blank(),
         axis.text = element_blank(),
         axis.title = element_blank(),
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5)) +
-  ggtitle(label = "Streamgage Outage Summary 2018-10-23", subtitle = "AHPS Sites") +
+  ggtitle(label = "Streamgage Outage Summary 2018-10-23", subtitle = "AHPS with forecasts as of 10-23 afternoon") +
   guides(shape = guide_legend(title=NULL, order = 2), 
          color = guide_legend(title="Maximum forecast stage", order = 1))
 
