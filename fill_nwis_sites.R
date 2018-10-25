@@ -10,4 +10,6 @@ ahps_nwis_crosswalk <- data.table::fread('USGS_AHPS_station.csv') %>%
 priority_df_joined <- left_join(priority_df, ahps_nwis_crosswalk, 
                                 by = c(NWSLI = "lid"))
 data.table::fwrite(priority_df_joined, file = "priority_sites_joined.csv")
-no_fixed_id <- priority_df_joined %>% filter(is.na(fixed_id))
+no_fixed_id <- priority_df_joined %>% 
+  filter(is.na(fixed_id) & !is.na(gage_id) & gage_id != "") 
+data.table::fwrite(no_fixed_id, file = 'priority_sites_30_new_gage_ids.csv')
